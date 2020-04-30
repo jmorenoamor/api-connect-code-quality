@@ -1,12 +1,18 @@
-name: 'Container Action Template'
-description: 'Get started with Container actions'
-author: 'GitHub'
-inputs: 
-  myInput:
-    description: 'Input to use'
-    default: 'world'
+name: "API Connect code quality checker"
+description: "Action that checks that the product and APIs comply with the defined quality rules"
+author: "Jesús Moreno Amor"
+inputs:
+  productFile:
+    description: "Product file to publish"
+    required: true
+  rules:
+    description: "Specific rules"
+outputs:
+  result:
+    description: "Result of the check"
 runs:
-  using: 'docker'
-  image: 'Dockerfile'
-  args:
-    - ${{ inputs.myInput }}
+  using: "docker"
+  image: "Dockerfile"
+branding:
+  icon: 'truck'
+  color: 'blue'
