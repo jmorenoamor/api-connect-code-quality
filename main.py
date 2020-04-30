@@ -173,7 +173,7 @@ class APIConnectQualityCheck(GithubAction):
     def run(self):
         product_path = os.getenv("INPUT_PRODUCTFILE")
 
-        if not os.path.exists(product_path):
+        if not product_path or not os.path.exists(product_path):
             self.gh_error(f"No existe el fichero {product_path}")
             self.gh_status("result", "error")
             exit(99)
