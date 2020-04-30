@@ -86,12 +86,16 @@ class APIConnectQualityCheck(GithubAction):
                 artifact=product_name,
                 message=f"El api {api_name} está referenciado por nombre.")
 
-            api_path = os.path.join(os.path.dirname(product_path),api['$ref'])
+            # Eliminar el numero de version del nombre del API
+            clean_reference = api['$ref'].split('_')[0] + ".yaml"
+            self.gh_debug(f"Cleaned {api['$ref']} to {clean_reference}")
+
+            api_path = os.path.join(os.path.dirname(product_path), clean_reference)
 
             self.check(rule="P006",
                 assertion=os.path.exists(api_path),
                 artifact=product_name,
-                message=f"El API ''{api_name}' referenciado no existe.")
+                message=f"El API '{api_name}' referenciado no existe.")
 
             self.check_api(api_path)
 
@@ -115,6 +119,7 @@ class APIConnectQualityCheck(GithubAction):
             "name": "X-IBM-Client-Id"
         }
         client_id_header = self.safeget(api, 'securityDefinitions', 'clientIdHeader')
+        # self.gh_debug(json.dumps(client_id_header, indent=2))
         self.check(rule="A002",
             assertion=client_id_header is not None,
             artifact=api_name,
@@ -131,10 +136,11 @@ class APIConnectQualityCheck(GithubAction):
             "enabled": True
         }
         activty_log = self.safeget(api, 'x-ibm-configuration', 'activity-log')
+        # self.gh_debug(json.dumps(activty_log, indent=2))
         self.check(rule="A004",
             assertion=activty_log is not None,
             artifact=api_name,
-            message=f"El esquema de seguridad no está definido correctamente.")
+            message=f"El almacenamiento de actividad no está definido correctamente.")
         self.check(rule="A005",
             assertion=activty_log == activity_schema,
             artifact=api_name,
@@ -154,10 +160,13 @@ class APIConnectQualityCheck(GithubAction):
         policy_type = list(policy.keys())[0]
         policy = policy[policy_type]
 
-        self.gh_debug(f"Checking policy {policy.get('title')}")
+        if policy_type != "default":
+            self.gh_debug(f"Checking policy {policy.get('title')}")
 
         if policy_type == "gatewayscript":
             pass
+        elif policy_type == "default":
+            self.check_assembly(policy)
         elif policy_type == "switch":
             for case in [p for p in policy['case'] if "condition" in p]:
                 self.check_assembly(case['execute'])
