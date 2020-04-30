@@ -2,8 +2,8 @@ name: "API Connect code quality checker"
 description: "Action that checks that the product and APIs comply with the defined quality rules"
 author: "Jesús Moreno Amor"
 inputs:
-  productFile:
-    description: "Product file to publish"
+  product:
+    description: "Product file to check"
     required: true
   rules:
     description: "Specific rules"
