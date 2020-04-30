@@ -87,7 +87,9 @@ class APIConnectQualityCheck(GithubAction):
                 message=f"El api {api_name} está referenciado por nombre.")
 
             # Eliminar el numero de version del nombre del API
-            clean_reference = api['$ref'].split('_')[0] + ".yaml"
+            clean_reference = api['$ref'].split('_')[0]
+            if not clean_reference.endswith(".yaml"):
+                clean_reference += ".yaml"
             self.gh_debug(f"Cleaned {api['$ref']} to {clean_reference}")
 
             api_path = os.path.join(os.path.dirname(product_path), clean_reference)
