@@ -175,10 +175,11 @@ class APIConnectQualityCheck(GithubAction):
             for case in [p for p in policy['case'] if "otherwise" in p]:
                 self.check_assembly(case['otherwise'])
         elif policy_type == "invoke":
-            self.check(rule="????",
-                assertion=policy['verb'] != "keep",
-                artifact=policy['title'],
-                message="El verbo de las políticas invoke debe especificarse de forma explícita.")
+            pass
+            # self.check(rule="????",
+            #     assertion=policy['verb'] != "keep",
+            #     artifact=policy['title'],
+            #     message="El verbo de las políticas invoke debe especificarse de forma explícita.")
 
 
     def run(self):
