@@ -3,7 +3,6 @@ import sys
 import oyaml as yaml
 import json
 
-
 class GithubAction():
 
     def __init__(self):
@@ -26,7 +25,8 @@ class APIConnectQualityCheck(GithubAction):
 
     def __init__(self):
         self.quality_errors = []
-
+        self.exceptions = {}
+        self.rules_ignored = False
 
     def load_yaml(self, filename, encoding='utf-8'):
         with open(filename, 'r', encoding=encoding) as file:
@@ -43,9 +43,15 @@ class APIConnectQualityCheck(GithubAction):
 
 
     def check(self, assertion, message, artifact, rule):
+        if self.exceptions.get(rule, None):
+            self.gh_warning(f"{rule}: {artifact}: {message} - Ignorada por: {self.exceptions[rule]['reason']}")
+            self.rules_ignored = True
+            return "skipped"
         if not assertion:
             self.quality_errors.append(f"{rule}: {artifact}: {message}")
             self.gh_warning(f"{rule}: {artifact}: {message}")
+            return "ko"
+        return "ok"
 
 
     def check_product(self, product_path):
@@ -175,29 +181,39 @@ class APIConnectQualityCheck(GithubAction):
             for case in [p for p in policy['case'] if "otherwise" in p]:
                 self.check_assembly(case['otherwise'])
         elif policy_type == "invoke":
-            pass
-            # self.check(rule="????",
-            #     assertion=policy['verb'] != "keep",
-            #     artifact=policy['title'],
-            #     message="El verbo de las políticas invoke debe especificarse de forma explícita.")
+            self.check(rule="A100",
+                assertion=policy.get('verb') != "keep",
+                artifact=policy.get('title'),
+                message="El verbo de las políticas invoke debe especificarse de forma explícita.")
 
 
     def run(self):
         product_path = os.getenv("INPUT_PRODUCT")
+        rules_path = os.getenv("INPUT_RULES")
+
+        if rules_path and os.path.exists(rules_path):
+            rules = self.load_yaml(rules_path)
+            self.exceptions = rules.get('exceptions', [])
+        else:
+            self.gh_error(f"No existe el fichero de reglas {rules_path}")
+            self.gh_status("result", "warning")
 
         if not product_path or not os.path.exists(product_path):
-            self.gh_error(f"No existe el fichero {product_path}")
+            self.gh_error(f"No existe el fichero de producto {product_path}")
             self.gh_status("result", "error")
             exit(99)
 
         self.check_product(product_path)
 
-        if not self.quality_errors:
-            self.gh_status("result", "ok")
+        if self.quality_errors:
+            self.gh_status("result", "error")
+            exit(99)
+        elif self.rules_ignored:
+            self.gh_status("result", "warning")
             exit(0)
         else:
-            self.gh_status("result", "warning")
-            exit(99)
+            self.gh_status("result", "ok")
+            exit(0)
 
 
 if __name__ == "__main__":
