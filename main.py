@@ -43,14 +43,15 @@ class APIConnectQualityCheck(GithubAction):
 
 
     def check(self, assertion, message, artifact, rule):
-        if self.exceptions.get(rule, None):
-            self.gh_warning(f"{rule}: {artifact}: {message} - Ignorada por: {self.exceptions[rule]['reason']}")
-            self.rules_ignored = True
-            return "skipped"
         if not assertion:
-            self.quality_errors.append(f"{rule}: {artifact}: {message}")
-            self.gh_warning(f"{rule}: {artifact}: {message}")
-            return "ko"
+            if self.exceptions.get(rule, None):
+                self.gh_warning(f"{rule}: {artifact}: {message} - Ignorada por: {self.exceptions[rule]['reason']}")
+                self.rules_ignored = True
+                return "skipped"
+            else:
+                self.quality_errors.append(f"{rule}: {artifact}: {message}")
+                self.gh_warning(f"{rule}: {artifact}: {message}")
+                return "ko"
         return "ok"
 
 
